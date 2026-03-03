@@ -6,8 +6,8 @@ services:
     container_name: shieldgate-postgres
     environment:
       POSTGRES_DB: shieldgate
-      POSTGRES_USER: shieldgate
-      POSTGRES_PASSWORD: shieldgate
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Moonknight@67
     ports:
       - "5432:5432"
     volumes:
