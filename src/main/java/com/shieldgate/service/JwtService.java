@@ -21,7 +21,6 @@ public class JwtService {
         this.expiration = expiration;
     }
 
-    // Creates a signed JWT with the username as the subject
     public String generateToken(String username) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
@@ -34,7 +33,6 @@ public class JwtService {
                 .compact();
     }
 
-    // Parses the token and returns the username. Throws an exception if invalid/expired.
     public String validateToken(String token) {
         return Jwts.parser()
                 .verifyWith(key)

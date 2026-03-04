@@ -31,24 +31,20 @@ public class JwtAuthenticationFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         String path = httpRequest.getRequestURI();
 
-        // Skip public paths — no token needed
         if (isPublicPath(path)) {
             chain.doFilter(request, response);
             return;
         }
 
-        // Extract the Authorization header
         String authHeader = httpRequest.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             sendError(httpResponse, "Missing or invalid Authorization header");
             return;
         }
 
-        // Validate the token
-        String token = authHeader.substring(7); // Remove "Bearer " prefix
+        String token = authHeader.substring(7);
         try {
             String username = jwtService.validateToken(token);
-            // Store username in request so downstream code can use it
             httpRequest.setAttribute("username", username);
             chain.doFilter(request, response);
         } catch (Exception e) {

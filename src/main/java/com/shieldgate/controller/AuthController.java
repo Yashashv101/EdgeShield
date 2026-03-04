@@ -18,8 +18,6 @@ public class AuthController {
     public AuthController(JwtService jwtService) {
         this.jwtService = jwtService;
     }
-
-    // Test endpoint to generate a JWT — NOT a real login
     @PostMapping("/token")
     public ResponseEntity<Map<String, String>> generateToken(@RequestParam String username) {
         String token = jwtService.generateToken(username);
