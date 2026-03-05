@@ -1,6 +1,8 @@
 package com.shieldgate.filter;
 
+import com.shieldgate.dto.ThreatEvent;
 import com.shieldgate.service.JwtService;
+import com.shieldgate.service.ThreatEventPublisher;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,9 +20,11 @@ import java.io.IOException;
 public class JwtAuthenticationFilter implements Filter {
 
     private final JwtService jwtService;
+    private final ThreatEventPublisher threatEventPublisher;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, ThreatEventPublisher threatEventPublisher) {
         this.jwtService = jwtService;
+        this.threatEventPublisher = threatEventPublisher;
     }
 
     @Override
@@ -38,6 +42,8 @@ public class JwtAuthenticationFilter implements Filter {
 
         String authHeader = httpRequest.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            threatEventPublisher.publish(new ThreatEvent(
+                    "MISSING_JWT", httpRequest.getRemoteAddr(), "unknown", path));
             sendError(httpResponse, "Missing or invalid Authorization header");
             return;
         }
@@ -48,6 +54,8 @@ public class JwtAuthenticationFilter implements Filter {
             httpRequest.setAttribute("username", username);
             chain.doFilter(request, response);
         } catch (Exception e) {
+            threatEventPublisher.publish(new ThreatEvent(
+                    "INVALID_JWT", httpRequest.getRemoteAddr(), "unknown", path));
             sendError(httpResponse, "Invalid or expired token");
         }
     }

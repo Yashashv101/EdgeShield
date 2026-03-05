@@ -1,6 +1,8 @@
 package com.shieldgate.filter;
 
+import com.shieldgate.dto.ThreatEvent;
 import com.shieldgate.service.RateLimiterService;
+import com.shieldgate.service.ThreatEventPublisher;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,9 +20,11 @@ import java.io.IOException;
 public class RateLimitFilter implements Filter {
 
     private final RateLimiterService rateLimiterService;
+    private final ThreatEventPublisher threatEventPublisher;
 
-    public RateLimitFilter(RateLimiterService rateLimiterService) {
+    public RateLimitFilter(RateLimiterService rateLimiterService, ThreatEventPublisher threatEventPublisher) {
         this.rateLimiterService = rateLimiterService;
+        this.threatEventPublisher = threatEventPublisher;
     }
 
     @Override
@@ -33,6 +37,8 @@ public class RateLimitFilter implements Filter {
         String key = getClientKey(httpRequest);
 
         if (rateLimiterService.isRateLimited(key)) {
+            threatEventPublisher.publish(new ThreatEvent(
+                    "RATE_LIMIT_EXCEEDED", httpRequest.getRemoteAddr(), key, httpRequest.getRequestURI()));
             httpResponse.setStatus(429);
             httpResponse.setContentType("application/json");
             httpResponse.getWriter().write("{\"error\": \"Rate limit exceeded. Try again later.\"}");
