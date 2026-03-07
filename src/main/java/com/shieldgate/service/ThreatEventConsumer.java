@@ -18,13 +18,12 @@ public class ThreatEventConsumer {
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE)
     public void consume(ThreatEvent event) {
-        ThreatLog log = new ThreatLog(
-                event.getThreatType(),
-                event.getSourceIp(),
-                event.getUsername(),
-                event.getRequestPath(),
-                event.getTimestamp()
-        );
+        ThreatLog log = new ThreatLog();
+        log.setThreatType(event.getThreatType());
+        log.setSourceIp(event.getSourceIp());
+        log.setUsername(event.getUsername());
+        log.setRequestPath(event.getRequestPath());
+        log.setTimestamp(event.getTimestamp());
         threatLogRepository.save(log);
     }
 }

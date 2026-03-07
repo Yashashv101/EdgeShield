@@ -2,41 +2,38 @@ server:
   port: 8080
 
 spring:
-  # PostgreSQL
   datasource:
     url: jdbc:postgresql://localhost:5432/shieldgate
     username: postgres
     password: Moonknight@67
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-
-  # Redis
   data:
     redis:
       host: localhost
       port: 6379
-
-  # RabbitMQ
   rabbitmq:
     host: localhost
     port: 5672
     username: guest
     password: guest
 
-# JWT
 jwt:
-  secret: shieldgate-super-secret-key-change-this-in-production-min-256-bits!!
+  secret: ${JWT_SECRET:local-dev-secret-key-change-this-in-production!!}
   expiration: 3600000
 
-# Rate Limiting
 ratelimit:
-  max-requests: 10
+  max-requests: ${RATE_LIMIT:100}
   window-seconds: 60
 
+proxy:
+  target-url: ${TARGET_URL:http://localhost:9090}
+
+auth:
+  login-url: ${LOGIN_URL:http://localhost:9090/login}
+  register-url: ${REGISTER_URL:http://localhost:9090/register}  
