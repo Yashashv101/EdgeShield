@@ -305,9 +305,3 @@ src/main/java/com/shieldgate/
 - **Fixed-window rate limiting** — susceptible to burst traffic at window boundaries compared to sliding-log algorithms.
 - **RestTemplate proxying** — buffers full request/response bodies in memory. Not suited for streaming large files or Server-Sent Events. A reactive WebClient migration would be needed for those use cases.
 - **Credential delegation model** — EdgeShield trusts your backend's `200` response as proof of valid credentials. Ensure your backend properly validates passwords before returning `200`.
-
----
-
-## License
-
-MIT
