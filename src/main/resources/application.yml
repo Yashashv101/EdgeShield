@@ -5,7 +5,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/shieldgate
     username: postgres
-    password: Moonknight@67
+    password: "Your Pass"
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
