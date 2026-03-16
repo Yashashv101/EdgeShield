@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShieldGate — Threat Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --bg: #0a0e1a;
+            --bg-secondary: #0f1629;
+            --surface: #161d30;
+            --surface-hover: #1c2540;
+            --text-main: #f1f5f9;
+            --text-muted: #64748b;
+            --text-dim: #475569;
+            --border: #1e293b;
+            --border-light: #334155;
+            --danger: #ef4444;
+            --danger-soft: rgba(239, 68, 68, 0.12);
+            --warning: #f59e0b;
+            --warning-soft: rgba(245, 158, 11, 0.12);
+            --info: #3b82f6;
+            --info-soft: rgba(59, 130, 246, 0.12);
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Ambient background glow ── */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -200px;
+            right: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+            z-index: 0;
+            pointer-events: none;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -200px;
+            left: -200px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(239,68,68,0.05) 0%, transparent 70%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .app { position: relative; z-index: 1; }
+
+        /* ══════════════════════════════════════════════════════════
+           LOGIN SCREEN
+           ══════════════════════════════════════════════════════════ */
+        .login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            left: -60px;
+            width: 160px;
+            height: 160px;
+            background: var(--primary);
+            filter: blur(80px);
+            opacity: 0.25;
+            z-index: 0;
+        }
+
+        .login-card > * { position: relative; z-index: 1; }
+
+        .login-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .login-logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1rem;
+            color: #fff;
+            letter-spacing: -1px;
+            box-shadow: 0 0 24px rgba(99,102,241,0.35);
+        }
+
+        .login-logo-text {
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.025em;
+        }
+
+        .login-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            margin-bottom: 2rem;
+        }
+
+        .login-input-group { margin-bottom: 1.25rem; }
+
+        .login-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background: rgba(15, 22, 41, 0.5);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 0.92rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .login-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .login-input::placeholder { color: var(--text-dim); }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.85rem;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            margin-top: 0.5rem;
+            font-family: inherit;
+        }
+
+        .login-btn:hover { background: var(--primary-hover); }
+        .login-btn:active { transform: scale(0.98); }
+        .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .login-error {
+            margin-top: 1rem;
+            padding: 0.7rem 0.9rem;
+            background: var(--danger-soft);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            border-radius: 8px;
+            font-size: 0.82rem;
+            display: none;
+        }
+
+        .login-error.show { display: flex; align-items: center; gap: 0.5rem; }
+
+        /* ══════════════════════════════════════════════════════════
+           DASHBOARD (hidden until logged in)
+           ══════════════════════════════════════════════════════════ */
+        .dashboard { display: none; }
+        .dashboard.visible { display: block; }
+
+        /* ── Header ── */
+        .header {
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            background: rgba(15, 22, 41, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: #fff;
+            letter-spacing: -1px;
+            box-shadow: 0 0 20px rgba(99,102,241,0.3);
+        }
+
+        .logo-text {
+            font-weight: 700;
+            font-size: 1.15rem;
+            letter-spacing: -0.025em;
+        }
+
+        .logo-text span { color: var(--text-muted); font-weight: 400; }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .toggle {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .toggle input { opacity: 0; width: 0; height: 0; }
+
+        .toggle-slider {
+            position: absolute;
+            inset: 0;
+            background: var(--border-light);
+            border-radius: 20px;
+            transition: 0.2s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            left: 3px;
+            bottom: 3px;
+            background: #fff;
+            border-radius: 50%;
+            transition: 0.2s;
+        }
+
+        .toggle input:checked + .toggle-slider { background: var(--primary); }
+        .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+        .header-btn {
+            padding: 0.5rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            color: var(--text-main);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-family: inherit;
+        }
+        .header-btn:hover { background: var(--surface-hover); border-color: var(--primary); }
+        .header-btn.spinning svg { animation: spin 0.6s linear; }
+
+        .logout-btn { color: var(--danger); border-color: rgba(239,68,68,0.2); }
+        .logout-btn:hover { background: var(--danger-soft); border-color: var(--danger); }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Stats Cards ── */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            padding: 1.5rem 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: all 0.2s;
+        }
+        .stat-card:hover { border-color: var(--border-light); transform: translateY(-1px); }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            line-height: 1;
+        }
+
+        .stat-card.total .stat-value { color: var(--text-main); }
+        .stat-card.missing .stat-value { color: var(--warning); }
+        .stat-card.invalid .stat-value { color: var(--danger); }
+        .stat-card.rate .stat-value { color: var(--info); }
+
+        .stat-bar {
+            height: 3px;
+            border-radius: 2px;
+            margin-top: 0.75rem;
+            opacity: 0.5;
+        }
+        .stat-card.total .stat-bar { background: linear-gradient(90deg, var(--primary), #8b5cf6); }
+        .stat-card.missing .stat-bar { background: var(--warning); }
+        .stat-card.invalid .stat-bar { background: var(--danger); }
+        .stat-card.rate .stat-bar { background: var(--info); }
+
+        /* ── Filter Bar ── */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0 2rem 1rem 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 0.9rem;
+            font-size: 0.78rem;
+            font-weight: 500;
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        .filter-btn:hover { color: var(--text-main); background: var(--surface-hover); }
+        .filter-btn.active { color: #fff; background: var(--primary); }
+
+        .search-input {
+            padding: 0.5rem 0.85rem;
+            padding-left: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 0.8rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.15s;
+            width: 220px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%2364748b' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 0.6rem center;
+        }
+        .search-input:focus { border-color: var(--primary); }
+        .search-input::placeholder { color: var(--text-dim); }
+
+        .log-count {
+            margin-left: auto;
+            font-size: 0.78rem;
+            color: var(--text-dim);
+        }
+        .log-count strong { color: var(--text-muted); }
+
+        /* ── Table ── */
+        .table-container { padding: 0 2rem 2rem 2rem; }
+
+        .table-wrapper {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        thead th {
+            padding: 0.85rem 1rem;
+            text-align: left;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-dim);
+            border-bottom: 1px solid var(--border);
+            background: rgba(15, 22, 41, 0.4);
+            position: sticky;
+            top: 0;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.15s;
+        }
+        thead th:hover { color: var(--text-muted); }
+        thead th .sort-icon { opacity: 0.3; margin-left: 4px; }
+        thead th.sorted .sort-icon { opacity: 1; color: var(--primary); }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.1s;
+        }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: var(--surface-hover); }
+
+        tbody td {
+            padding: 0.75rem 1rem;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+
+        .cell-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+        .badge.MISSING_JWT { background: var(--warning-soft); color: var(--warning); }
+        .badge.MISSING_JWT .badge-dot { background: var(--warning); }
+        .badge.INVALID_JWT { background: var(--danger-soft); color: var(--danger); }
+        .badge.INVALID_JWT .badge-dot { background: var(--danger); }
+        .badge.RATE_LIMIT_EXCEEDED { background: var(--info-soft); color: var(--info); }
+        .badge.RATE_LIMIT_EXCEEDED .badge-dot { background: var(--info); }
+
+        .cell-ip {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--text-main);
+        }
+
+        .cell-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .cell-time { font-size: 0.78rem; color: var(--text-dim); white-space: nowrap; }
+
+        /* ── Empty State ── */
+        .empty-state { padding: 4rem 2rem; text-align: center; }
+
+        .empty-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 1rem auto;
+            background: var(--surface-hover);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .empty-state h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.35rem; }
+        .empty-state p { font-size: 0.85rem; color: var(--text-dim); }
+
+        /* ── Loading Bar ── */
+        .loading-bar {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 200;
+            animation: loadSlide 1s ease-in-out infinite;
+            display: none;
+        }
+        .loading-bar.active { display: block; }
+
+        @keyframes loadSlide {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* ── Session bar ── */
+        .session-bar {
+            padding: 0.5rem 2rem;
+            background: rgba(99, 102, 241, 0.06);
+            border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+        .session-bar .user-badge {
+            background: var(--primary-glow);
+            color: var(--primary);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.72rem;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .stats { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .stats { grid-template-columns: 1fr; }
+            .header { padding: 1rem; }
+            .filter-bar, .table-container { padding-left: 1rem; padding-right: 1rem; }
+            .stats { padding: 1rem; }
+            .search-input { width: 100%; }
+            .login-card { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="loading-bar" id="loadingBar"></div>
+
+<div class="app">
+
+    <!-- ═══════════════════════════════════════════════════════
+         LOGIN SCREEN
+         ═══════════════════════════════════════════════════════ -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-card">
+            <div class="login-logo">
+                <div class="login-logo-icon">SG</div>
+                <div class="login-logo-text">ShieldGate</div>
+            </div>
+            <p class="login-subtitle">Sign in to access the threat dashboard</p>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="login-input-group">
+                    <label class="login-label" for="loginUser">Username</label>
+                    <input class="login-input" type="text" id="loginUser" placeholder="Enter your username" required autocomplete="username">
+                </div>
+                <div class="login-input-group">
+                    <label class="login-label" for="loginPass">Password</label>
+                    <input class="login-input" type="password" id="loginPass" placeholder="Enter your password" required autocomplete="current-password">
+                </div>
+                <button class="login-btn" type="submit" id="loginBtn">Sign In</button>
+            </form>
+
+            <div class="login-error" id="loginError">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+                </svg>
+                <span id="loginErrorText">Invalid credentials</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         DASHBOARD (shown after login)
+         ═══════════════════════════════════════════════════════ -->
+    <div class="dashboard" id="dashboard">
+
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">SG</div>
+                <div class="logo-text">ShieldGate <span>Dashboard</span></div>
+            </div>
+            <div class="header-right">
+                <div class="auto-refresh">
+                    <label class="toggle">
+                        <input type="checkbox" id="autoRefreshToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span>Auto-refresh</span>
+                </div>
+                <button class="header-btn" id="refreshBtn" onclick="fetchLogs()">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M23 4v6h-6M1 20v-6h6"/>
+                        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                    </svg>
+                    Refresh
+                </button>
+                <button class="header-btn logout-btn" onclick="logout()">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+                    </svg>
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- Session info -->
+        <div class="session-bar">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            Authenticated as <span class="user-badge" id="sessionUser">—</span>
+            <span style="margin-left: auto; opacity: 0.5;">Session stored in browser</span>
+        </div>
+
+        <!-- Stats -->
+        <section class="stats">
+            <div class="stat-card total">
+                <div class="stat-label">Total Threats</div>
+                <div class="stat-value" id="statTotal">—</div>
+                <div class="stat-bar"></div>
+            </div>
+            <div class="stat-card missing">
+                <div class="stat-label">Missing JWT</div>
+                <div class="stat-value" id="statMissing">—</div>
+                <div class="stat-bar"></div>
+            </div>
+            <div class="stat-card invalid">
+                <div class="stat-label">Invalid JWT</div>
+                <div class="stat-value" id="statInvalid">—</div>
+                <div class="stat-bar"></div>
+            </div>
+            <div class="stat-card rate">
+                <div class="stat-label">Rate Limited</div>
+                <div class="stat-value" id="statRate">—</div>
+                <div class="stat-bar"></div>
+            </div>
+        </section>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+            <div class="filter-group" id="typeFilter">
+                <button class="filter-btn active" data-type="ALL" onclick="setFilter(this)">All</button>
+                <button class="filter-btn" data-type="MISSING_JWT" onclick="setFilter(this)">Missing JWT</button>
+                <button class="filter-btn" data-type="INVALID_JWT" onclick="setFilter(this)">Invalid JWT</button>
+                <button class="filter-btn" data-type="RATE_LIMIT_EXCEEDED" onclick="setFilter(this)">Rate Limited</button>
+            </div>
+            <input type="text" class="search-input" id="ipSearch" placeholder="Filter by IP address…" oninput="applyFilters()">
+            <div class="log-count" id="logCount"></div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th onclick="sortBy('id')" id="th-id"># <span class="sort-icon">↕</span></th>
+                            <th onclick="sortBy('threatType')" id="th-threatType">Type <span class="sort-icon">↕</span></th>
+                            <th onclick="sortBy('sourceIp')" id="th-sourceIp">Source IP <span class="sort-icon">↕</span></th>
+                            <th onclick="sortBy('username')" id="th-username">User <span class="sort-icon">↕</span></th>
+                            <th onclick="sortBy('requestPath')" id="th-requestPath">Path <span class="sort-icon">↕</span></th>
+                            <th onclick="sortBy('timestamp')" id="th-timestamp" class="sorted">Time <span class="sort-icon">↓</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody">
+                        <tr><td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-icon">
+                                    <svg width="24" height="24" fill="none" stroke="#475569" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/>
+                                    </svg>
+                                </div>
+                                <h3>Loading threat logs…</h3>
+                                <p>Fetching data from ShieldGate API</p>
+                            </div>
+                        </td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let allLogs = [];
+    let filteredLogs = [];
+    let currentFilter = 'ALL';
+    let sortField = 'timestamp';
+    let sortAsc = false;
+    let autoRefreshInterval = null;
+
+    // ══════════════════════════════════════════════════════════
+    //  AUTH — login, session, logout
+    // ══════════════════════════════════════════════════════════
+
+    function getToken() { return sessionStorage.getItem('sg_token'); }
+    function getUser()  { return sessionStorage.getItem('sg_user'); }
+
+    function checkSession() {
+        const token = getToken();
+        if (token) {
+            showDashboard();
+        } else {
+            showLogin();
+        }
+    }
+
+    function showLogin() {
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('dashboard').classList.remove('visible');
+    }
+
+    function showDashboard() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboard').classList.add('visible');
+        document.getElementById('sessionUser').textContent = getUser() || 'admin';
+        fetchLogs();
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        const btn = document.getElementById('loginBtn');
+        const errBox = document.getElementById('loginError');
+        const errText = document.getElementById('loginErrorText');
+        const username = document.getElementById('loginUser').value;
+        const password = document.getElementById('loginPass').value;
+
+        btn.disabled = true;
+        btn.textContent = 'Signing in…';
+        errBox.classList.remove('show');
+
+        try {
+            const res = await fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.token) {
+                sessionStorage.setItem('sg_token', data.token);
+                sessionStorage.setItem('sg_user', username);
+                showDashboard();
+            } else {
+                errText.textContent = data.error || 'Invalid credentials';
+                errBox.classList.add('show');
+            }
+        } catch (err) {
+            errText.textContent = 'Cannot reach ShieldGate. Is the server running?';
+            errBox.classList.add('show');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Sign In';
+        }
+    }
+
+    function logout() {
+        sessionStorage.removeItem('sg_token');
+        sessionStorage.removeItem('sg_user');
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+        document.getElementById('autoRefreshToggle').checked = false;
+        allLogs = [];
+        showLogin();
+    }
+
+    // ══════════════════════════════════════════════════════════
+    //  DASHBOARD — fetch, filter, sort, render
+    // ══════════════════════════════════════════════════════════
+
+    async function fetchLogs() {
+        const token = getToken();
+        if (!token) { showLogin(); return; }
+
+        const bar = document.getElementById('loadingBar');
+        const btn = document.getElementById('refreshBtn');
+        bar.classList.add('active');
+        btn.classList.add('spinning');
+
+        try {
+            const res = await fetch('/admin/threats', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+
+            if (res.status === 401) {
+                // Token expired or invalid — force re-login
+                logout();
+                const errText = document.getElementById('loginErrorText');
+                const errBox = document.getElementById('loginError');
+                errText.textContent = 'Session expired. Please sign in again.';
+                errBox.classList.add('show');
+                return;
+            }
+
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+
+            allLogs = await res.json();
+            updateStats();
+            applyFilters();
+        } catch (err) {
+            console.error('Failed to fetch logs:', err);
+            showEmpty('Connection Error', 'Could not reach the ShieldGate API. Is the server running?');
+        } finally {
+            bar.classList.remove('active');
+            setTimeout(() => btn.classList.remove('spinning'), 600);
+        }
+    }
+
+    function updateStats() {
+        document.getElementById('statTotal').textContent = allLogs.length.toLocaleString();
+        document.getElementById('statMissing').textContent = allLogs.filter(l => l.threatType === 'MISSING_JWT').length.toLocaleString();
+        document.getElementById('statInvalid').textContent = allLogs.filter(l => l.threatType === 'INVALID_JWT').length.toLocaleString();
+        document.getElementById('statRate').textContent = allLogs.filter(l => l.threatType === 'RATE_LIMIT_EXCEEDED').length.toLocaleString();
+    }
+
+    function setFilter(btn) {
+        document.querySelectorAll('#typeFilter .filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.type;
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const ipQuery = document.getElementById('ipSearch').value.trim().toLowerCase();
+
+        filteredLogs = allLogs.filter(log => {
+            if (currentFilter !== 'ALL' && log.threatType !== currentFilter) return false;
+            if (ipQuery && !(log.sourceIp || '').toLowerCase().includes(ipQuery)) return false;
+            return true;
+        });
+
+        sortLogs();
+        renderTable();
+        document.getElementById('logCount').innerHTML =
+            'Showing <strong>' + filteredLogs.length + '</strong> of <strong>' + allLogs.length + '</strong>';
+    }
+
+    function sortBy(field) {
+        if (sortField === field) { sortAsc = !sortAsc; }
+        else { sortField = field; sortAsc = true; }
+
+        document.querySelectorAll('thead th').forEach(th => {
+            th.classList.remove('sorted');
+            th.querySelector('.sort-icon').textContent = '↕';
+        });
+        const th = document.getElementById('th-' + field);
+        th.classList.add('sorted');
+        th.querySelector('.sort-icon').textContent = sortAsc ? '↑' : '↓';
+
+        sortLogs();
+        renderTable();
+    }
+
+    function sortLogs() {
+        filteredLogs.sort((a, b) => {
+            let va = a[sortField], vb = b[sortField];
+            if (va == null) va = '';
+            if (vb == null) vb = '';
+            if (typeof va === 'number') return sortAsc ? va - vb : vb - va;
+            return sortAsc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+        });
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('logTableBody');
+
+        if (filteredLogs.length === 0) {
+            showEmpty('No threats found', currentFilter !== 'ALL'
+                ? 'No logs match the current filter.'
+                : 'Your gateway hasn\'t recorded any threat events yet.');
+            return;
+        }
+
+        tbody.innerHTML = filteredLogs.map(log =>
+            '<tr>' +
+                '<td class="cell-id">' + log.id + '</td>' +
+                '<td><span class="badge ' + log.threatType + '"><span class="badge-dot"></span>' + formatType(log.threatType) + '</span></td>' +
+                '<td class="cell-ip">' + escapeHtml(log.sourceIp || '—') + '</td>' +
+                '<td>' + escapeHtml(log.username || '—') + '</td>' +
+                '<td class="cell-path" title="' + escapeHtml(log.requestPath || '') + '">' + escapeHtml(log.requestPath || '—') + '</td>' +
+                '<td class="cell-time">' + formatTime(log.timestamp) + '</td>' +
+            '</tr>'
+        ).join('');
+    }
+
+    function showEmpty(title, subtitle) {
+        document.getElementById('logTableBody').innerHTML =
+            '<tr><td colspan="6"><div class="empty-state">' +
+                '<div class="empty-icon"><svg width="24" height="24" fill="none" stroke="#475569" stroke-width="1.5" viewBox="0 0 24 24">' +
+                '<path d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/></svg></div>' +
+                '<h3>' + title + '</h3><p>' + subtitle + '</p></div></td></tr>';
+    }
+
+    // ── Helpers ──
+    function formatType(type) {
+        switch (type) {
+            case 'MISSING_JWT': return 'Missing JWT';
+            case 'INVALID_JWT': return 'Invalid JWT';
+            case 'RATE_LIMIT_EXCEEDED': return 'Rate Limited';
+            default: return type;
+        }
+    }
+
+    function formatTime(ts) {
+        if (!ts) return '—';
+        const d = new Date(ts);
+        if (isNaN(d)) return ts;
+        const pad = n => String(n).padStart(2, '0');
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return pad(d.getDate()) + ' ' + months[d.getMonth()] + ' ' + d.getFullYear() + ', ' +
+               pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // ── Auto-refresh ──
+    document.getElementById('autoRefreshToggle').addEventListener('change', function () {
+        if (this.checked) {
+            autoRefreshInterval = setInterval(fetchLogs, 5000);
+        } else {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+        }
+    });
+
+    // ── Init ──
+    checkSession();
+</script>
+
+</body>
+</html>

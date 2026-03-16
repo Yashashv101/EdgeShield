@@ -72,7 +72,6 @@ public class JwtAuthenticationFilter implements Filter {
         return path.equals("/health")
                 || path.startsWith("/auth/")
                 || path.equals("/")
-                || path.equals("/index.html")
                 || path.startsWith("/dashboard/")
                 || path.endsWith(".css")
                 || path.endsWith(".js")
