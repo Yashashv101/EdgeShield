@@ -5,3 +5,6 @@ target/
 .git/
 .gitignore
 *.md
+.env
+.env.*
+

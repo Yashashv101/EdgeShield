@@ -1,21 +1,5 @@
 services:
-  app:
-    build: .
-    container_name: shieldgate-app
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      TARGET_URL: ${TARGET_URL}
-      JWT_SECRET: ${JWT_SECRET}
-      RATE_LIMIT: ${RATE_LIMIT:-100}
-      LOGIN_URL: ${LOGIN_URL}
-      REGISTER_URL: ${REGISTER_URL}
-    ports:
-      - "8080:8080"
-    depends_on:
-      - postgres
-      - redis
-      - rabbitmq
-
+  # ─── EDGESHIELD POSTGRES ──────────────────────────────────────
   postgres:
     image: postgres:16
     container_name: shieldgate-postgres
@@ -24,18 +8,63 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: changeme
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - shieldgate-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  # ─── EDGESHIELD REDIS ─────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: shieldgate-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  # ─── EDGESHIELD RABBITMQ ──────────────────────────────────────
   rabbitmq:
     image: rabbitmq:3-management
     container_name: shieldgate-rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # ─── EDGESHIELD GATEWAY ───────────────────────────────────────
+  shieldgate:
+    image: yashashv101/edgeshield:latest
+    container_name: shieldgate-app
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+      # ─── CONFIGURE THESE ──────────────────────────────────────
+      TARGET_URL: http://host.docker.internal:9090       # Your backend port
+      LOGIN_URL: http://host.docker.internal:9090/login
+      REGISTER_URL: http://host.docker.internal:9090/register
+      JWT_SECRET: <paste-your-generated-secret-here>     # From Step 1
+      RATE_LIMIT: 100                                    # Max requests per IP per minute
+      # ──────────────────────────────────────────────────────────
+
+      POSTGRES_PASSWORD: changeme
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
-  pgdata:
+  shieldgate-pgdata:

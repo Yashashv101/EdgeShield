@@ -19,7 +19,8 @@ public class ProxyController {
 
     @RequestMapping
     public ResponseEntity<String> proxy(HttpServletRequest request) {
-        String url = targetUrl + request.getRequestURI();
+        String path = request.getRequestURI().replaceFirst("^/api", "");
+        String url = targetUrl + path;
 
         ResponseEntity<String> response = restTemplate.exchange(
                 url,

@@ -42,26 +42,41 @@ public class JwtAuthenticationFilter implements Filter {
 
         String authHeader = httpRequest.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            threatEventPublisher.publish(new ThreatEvent(
-                    "MISSING_JWT", httpRequest.getRemoteAddr(), "unknown", path));
+            try {
+                threatEventPublisher.publish(new ThreatEvent(
+                        "MISSING_JWT", httpRequest.getRemoteAddr(), "unknown", path));
+            } catch (Exception publishException) {
+                System.err.println("WARNING: Threat publish failed: " + publishException.getMessage());
+            }
             sendError(httpResponse, "Missing or invalid Authorization header");
             return;
         }
 
         String token = authHeader.substring(7);
-        try {
+        try { 
             String username = jwtService.validateToken(token);
             httpRequest.setAttribute("username", username);
             chain.doFilter(request, response);
         } catch (Exception e) {
-            threatEventPublisher.publish(new ThreatEvent(
-                    "INVALID_JWT", httpRequest.getRemoteAddr(), "unknown", path));
-            sendError(httpResponse, "Invalid or expired token");
+            try {
+                threatEventPublisher.publish(new ThreatEvent(
+                        "INVALID_JWT", httpRequest.getRemoteAddr(), "unknown", path));
+            } catch (Exception publishException) {
+                System.err.println("WARNING: Threat publish failed: " + publishException.getMessage());
+            }
+        sendError(httpResponse, "Invalid or expired token");
         }
     }
 
     private boolean isPublicPath(String path) {
-        return path.equals("/health") || path.startsWith("/auth/");
+        return path.equals("/health")
+                || path.startsWith("/auth/")
+                || path.equals("/")
+                || path.equals("/index.html")
+                || path.startsWith("/dashboard/")
+                || path.endsWith(".css")
+                || path.endsWith(".js")
+                || path.endsWith(".ico");
     }
 
     private void sendError(HttpServletResponse response, String message) throws IOException {

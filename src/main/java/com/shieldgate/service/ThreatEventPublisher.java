@@ -15,10 +15,14 @@ public class ThreatEventPublisher {
     }
 
     public void publish(ThreatEvent event) {
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.EXCHANGE,
-                RabbitMQConfig.ROUTING_KEY,
+        try {
+            rabbitTemplate.convertAndSend(
+                RabbitMQConfig.EXCHANGE,      // "threat-events-exchange"
+                RabbitMQConfig.ROUTING_KEY,   // "threat.event"
                 event
-        );
+            );
+        } catch (Exception e) {
+            System.err.println("WARNING: Could not publish threat event: " + e.getMessage());
+        }
     }
 }
