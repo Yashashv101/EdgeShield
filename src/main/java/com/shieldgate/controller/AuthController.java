@@ -29,18 +29,19 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
+        String username = body.get("username");
+        if (username == null || username.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Username is required"));
+        }
         try {
             ResponseEntity<String> backendResponse = restTemplate.postForEntity(
                 loginUrl, body, String.class);
-
             if (backendResponse.getStatusCode().is2xxSuccessful()) {
                 String token = jwtService.generateToken(body.get("username"));
                 return ResponseEntity.ok(Map.of("token", token));
             }
-
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("error", "Invalid credentials"));
-
         } catch (HttpClientErrorException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("error", "Invalid credentials"));
@@ -49,6 +50,10 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String, String> body) {
+        String username = body.get("username");
+        if (username == null || username.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Username is required"));
+        }
         try {
             ResponseEntity<String> backendResponse = restTemplate.postForEntity(
                 registerUrl, body, String.class);
