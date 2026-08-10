@@ -24,5 +24,6 @@ public class ThreatEvent implements Serializable {
         this.sourceIp = sourceIp;
         this.username = username;
         this.requestPath = requestPath;
+        this.timestamp = LocalDateTime.now();
     }
 }
