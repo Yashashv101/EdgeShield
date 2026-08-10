@@ -69,14 +69,13 @@ public class JwtAuthenticationFilter implements Filter {
     }
 
     private boolean isPublicPath(String path) {
-        return path.equals("/health")
-                || path.startsWith("/auth/")
-                || path.equals("/")
-                || path.startsWith("/dashboard/")
-                || path.endsWith(".css")
-                || path.endsWith(".js")
-                || path.endsWith(".ico");
-    }
+    return path.equals("/health")
+            || path.startsWith("/auth/")
+            || path.equals("/")
+            || path.equals("/favicon.ico")
+            || path.startsWith("/dashboard/");
+}
+
 
     private void sendError(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
