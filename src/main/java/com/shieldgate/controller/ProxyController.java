@@ -18,16 +18,21 @@ public class ProxyController {
     private String targetUrl;
 
     @RequestMapping
-    public ResponseEntity<String> proxy(HttpServletRequest request) {
+    public ResponseEntity<byte[]> proxy(@RequestBody(required = false) byte[] body, HttpServletRequest request) {
         String path = request.getRequestURI().replaceFirst("^/api", "");
-        String url = targetUrl + path;
-
-        ResponseEntity<String> response = restTemplate.exchange(
-                url,
-                HttpMethod.valueOf(request.getMethod()),
-                null,
-                String.class);
-
-        return response;
+        String queryString = request.getQueryString();
+        String url = targetUrl + path + (queryString != null ? "?" + queryString : "");
+        HttpHeaders headers = new HttpHeaders();
+        Collections.list(request.getHeaderNames()).forEach(headerName -> {
+            if (!HttpHeaders.HOST.equalsIgnoreCase(headerName) && !HttpHeaders.CONTENT_LENGTH.equalsIgnoreCase(headerName)) {
+                headers.addAll(headerName, Collections.list(request.getHeaders(headerName)));
+            }
+        });
+        HttpEntity<byte[]> entity = new HttpEntity<>(body, headers);
+        try {
+            return restTemplate.exchange(url, HttpMethod.valueOf(request.getMethod()), entity, byte[].class);
+        } catch (HttpStatusCodeException e) {
+            return ResponseEntity.status(e.getStatusCode()).headers(e.getResponseHeaders()).body(e.getResponseBodyAsByteArray());
+        }
     }
 }
