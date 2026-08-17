@@ -10,11 +10,13 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
 @Order(1)
 public class JwtAuthenticationFilter implements Filter {
@@ -46,7 +48,7 @@ public class JwtAuthenticationFilter implements Filter {
                 threatEventPublisher.publish(new ThreatEvent(
                         "MISSING_JWT", httpRequest.getRemoteAddr(), "unknown", path));
             } catch (Exception publishException) {
-                System.err.println("WARNING: Threat publish failed: " + publishException.getMessage());
+                log.warn("Threat publish failed: {}", publishException.getMessage(), publishException);
             }
             sendError(httpResponse, "Missing or invalid Authorization header");
             return;
@@ -62,9 +64,9 @@ public class JwtAuthenticationFilter implements Filter {
                 threatEventPublisher.publish(new ThreatEvent(
                         "INVALID_JWT", httpRequest.getRemoteAddr(), "unknown", path));
             } catch (Exception publishException) {
-                System.err.println("WARNING: Threat publish failed: " + publishException.getMessage());
+                log.warn("Threat publish failed: {}", publishException.getMessage(), publishException);
             }
-        sendError(httpResponse, "Invalid or expired token");
+            sendError(httpResponse, "Invalid or expired token");
         }
     }
 

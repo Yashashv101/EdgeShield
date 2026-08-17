@@ -2,9 +2,11 @@ package com.shieldgate.service;
 
 import com.shieldgate.config.RabbitMQConfig;
 import com.shieldgate.dto.ThreatEvent;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class ThreatEventPublisher {
 
@@ -22,7 +24,7 @@ public class ThreatEventPublisher {
                 event
             );
         } catch (Exception e) {
-            System.err.println("WARNING: Could not publish threat event: " + e.getMessage());
+            log.warn("Could not publish threat event: {}", e.getMessage(), e);
         }
     }
 }
